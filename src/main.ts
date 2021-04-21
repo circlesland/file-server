@@ -82,7 +82,7 @@ app.post('/upload', async (req: Request, res: Response) => {
         const uploadedFile = await fleekStorage.upload({
             apiKey: process.env.FLEEK_STORAGE_API_KEY,
             apiSecret: process.env.FLEEK_STORAGE_API_SECRET,
-            key: `${fileName}::~${mimeType}::~${sub}`,
+            key: `${sub}/${fileName ?? "no-name"}`,
             data: bytes
         });
 

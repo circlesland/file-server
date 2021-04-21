@@ -7,10 +7,22 @@ import fleekStorage from '@fleekhq/fleek-storage-js'
 const packageJson = require("../package.json");
 
 const app = express();
-app.use(cors())
+
+if (!process.env.CORS_ORIGNS) {
+    throw new Error("No CORS_ORIGNS env variable");
+}
+const corsOrigins = process.env.CORS_ORIGNS.split(";").map(o => o.trim());
+console.log("Cors origins: ", corsOrigins);
+
+var corsOptions = {
+    origin: function (origin:string, callback:any) {
+        callback(null, corsOrigins);
+    }
+}
+
 app.use(bodyParser.json({limit: '5mb', type: 'application/json'}));
 
-app.get('/', cors(), (req:Request ,res:Response) => {
+app.get('/', cors(corsOptions), (req:Request ,res:Response) => {
     res.statusCode = 200;
     const version = packageJson.version.split(".");
     return res.json({
@@ -23,7 +35,7 @@ app.get('/', cors(), (req:Request ,res:Response) => {
     });
 });
 
-app.post('/upload', cors(), async (req:Request ,res:Response) => {
+app.post('/upload', cors(corsOptions), async (req:Request ,res:Response) => {
     if (!req.headers.authorization) {
         throw new Error(`Not authorized.`);
     }

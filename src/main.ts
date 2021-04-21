@@ -23,7 +23,7 @@ app.get('/', cors(), (req:Request ,res:Response) => {
     });
 });
 
-app.post('/upload', async (req:Request ,res:Response) => {
+app.post('/upload', cors(), async (req:Request ,res:Response) => {
     if (!req.headers.authorization) {
         throw new Error(`Not authorized.`);
     }
@@ -53,13 +53,13 @@ app.post('/upload', async (req:Request ,res:Response) => {
 
     const fileName = req.body.fileName;
     const mimeType = req.body.mimeType;
-    const bytes = req.body.bytes;
+    const bytes = Buffer.from(req.body.bytes, 'utf-8');
 
     const uploadedFile = await fleekStorage.upload({
         apiKey: process.env.FLEEK_STORAGE_API_KEY,
         apiSecret: process.env.FLEEK_STORAGE_API_SECRET,
         key: `${fileName}::~${mimeType}::~${sub}`,
-        data: bytes,
+        data: bytes
     });
 
     res.statusCode = 200;

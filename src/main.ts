@@ -61,10 +61,10 @@ app.post('/upload', cors(corsOptions), async (req: Request, res: Response) => {
         sub = tokenPayload.sub;
     } catch (e) {
         console.error(e);
-        return {
+        return res.json({
             status: "error",
             message: e.message
-        }
+        });
     }
 
     const fileName = req.body.fileName;
@@ -97,10 +97,10 @@ app.post('/upload', cors(corsOptions), async (req: Request, res: Response) => {
         });
     } catch (e) {
         console.error(e);
-        return {
+        return res.json({
             status: "error",
             message: "An error occurred during the file upload."
-        }
+        })
     }
 });
 

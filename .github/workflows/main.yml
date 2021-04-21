@@ -1,0 +1,41 @@
+name: deploy main
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  migrate-db:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Node
+        uses: actions/setup-node@v2
+      - name: Build
+        run: ./deploy_prisma.sh
+        env:
+          DO_PGSQL_CONNECTIONSTRING: ${{ secrets.MAIN_API_CONNECTION_STRING }}
+
+  build-docker-image:
+    needs: migrate-db
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - id: readPackageJson
+        run: |
+          content=`cat ./package.json`
+          # the following lines are only required for multi line json
+          content="${content//'%'/'%25'}"
+          content="${content//$'\n'/'%0A'}"
+          content="${content//$'\r'/'%0D'}"
+          # end of optional handling for multi line json
+          echo "::set-output name=packageJson::$content"
+      - name: Build and publish the docker image
+        env:
+          DOCKER_REGISTRY_USER: ${{secrets.DOCKER_REGISTRY_USER}}
+          DOCKER_REGISTRY_PASSWORD: ${{secrets.DOCKER_REGISTRY_PASSWORD}}
+        run: |
+          docker login https://ghcr.io -u $DOCKER_REGISTRY_USER -p $DOCKER_REGISTRY_PASSWORD
+          docker build . --tag ghcr.io/circlesland/file-server:latest --tag ghcr.io/circlesland/file-server:${{fromJson(steps.readPackageJson.outputs.packageJson).version}} --tag file-server --tag main
+          docker push ghcr.io/circlesland/file-server:${{fromJson(steps.readPackageJson.outputs.packageJson).version}}

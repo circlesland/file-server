@@ -69,7 +69,7 @@ app.post('/upload', async (req: Request, res: Response) => {
 
     const fileName = req.body.fileName;
     const mimeType = req.body.mimeType;
-    const bytes = Buffer.from(req.body.bytes, 'utf-8');
+    const bytes = Buffer.from(req.body.bytes, 'base64');
 
     if (!process.env.FLEEK_STORAGE_API_KEY) {
         throw new Error('process.env.FLEEK_STORAGE_API_KEY is not set')

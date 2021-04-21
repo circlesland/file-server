@@ -16,16 +16,16 @@ if (!process.env.CORS_ORIGNS) {
 const corsOrigins = process.env.CORS_ORIGNS.split(";").map(o => o.trim());
 console.log("Cors origins: ", corsOrigins);
 
-var corsOptions = {
+const corsOptions = {
     origin: function (origin: string, callback: any) {
-        console.log("Get cors origin list .. Current request origin: " + origin);
-        callback(null, corsOrigins);
+        callback(null, !origin || corsOrigins.indexOf(origin) > -1);
     }
 }
 
+app.use(cors(corsOptions));
 app.use(bodyParser.json({limit: '5mb', type: 'application/json'}));
 
-app.get('/', cors(corsOptions), (req: Request, res: Response) => {
+app.get('/', (req: Request, res: Response) => {
     res.statusCode = 200;
     const version = packageJson.version.split(".");
     return res.json({
@@ -38,7 +38,7 @@ app.get('/', cors(corsOptions), (req: Request, res: Response) => {
     });
 });
 
-app.post('/upload', cors(corsOptions), async (req: Request, res: Response) => {
+app.post('/upload', async (req: Request, res: Response) => {
     let sub: string = "";
     try {
         if (!req.headers.authorization) {

@@ -4,7 +4,8 @@ import {Client} from "./auth-client/client";
 const cors = require('cors')
 const express = require('express');
 const bodyParser = require('body-parser');
-import fleekStorage from '@fleekhq/fleek-storage-js'
+// import fleekStorage from '@fleekhq/fleek-storage-js'
+const AWS = require('aws-sdk')
 
 const packageJson = require("../package.json");
 
@@ -79,21 +80,39 @@ app.post('/upload', async (req: Request, res: Response) => {
     }
 
     try {
+        /*
         const uploadedFile = await fleekStorage.upload({
             apiKey: process.env.FLEEK_STORAGE_API_KEY,
             apiSecret: process.env.FLEEK_STORAGE_API_SECRET,
             key: `${sub}/${fileName ?? "no-name"}`,
             data: bytes
         });
+         */
+
+        const spacesEndpoint = new AWS.Endpoint(process.env.DIGITALOCEAN_SPACES_ENDPOINT);
+        const s3 = new AWS.S3({
+            endpoint: spacesEndpoint,
+            accessKeyId: process.env.DIGITALOCEAN_SPACES_KEY,
+            secretAccessKey: process.env.DIGITALOCEAN_SPACES_SECRET
+        });
+
+        var params = {
+            Bucket: "circlesland-pictures",
+            Body: bytes,
+            Key: `${sub}/${fileName ?? "no-name"}`,
+            ACL:'public-read'
+        };
+
+        await s3.putObject(params).promise();
 
         res.statusCode = 200;
         return res.json({
             status: "ok",
-            hash: uploadedFile.hash,
-            hashV8: uploadedFile.hashV0,
-            bucket: uploadedFile.bucket,
-            url: uploadedFile.publicUrl,
-            key: uploadedFile.key
+            hash: "",//uploadedFile.hash,
+            hashV8: "",//uploadedFile.hashV0,
+            bucket: "",//uploadedFile.bucket,
+            url: `https://circlesland-pictures.fra1.cdn.digitaloceanspaces.com/${params.Key}`,
+            key: params.Key
         });
     } catch (e) {
         console.error(e);
@@ -111,3 +130,26 @@ if (!process.env.PORT) {
 app.listen(process.env.PORT, () => {
     console.log(`Server is running at http://localhost:${process.env.PORT}`);
 });
+
+async function uploadtoS3 () {
+
+    const spacesEndpoint = new AWS.Endpoint(process.env.DIGITALOCEAN_SPACES_ENDPOINT);
+    const s3 = new AWS.S3({
+        endpoint: spacesEndpoint,
+        accessKeyId: process.env.DIGITALOCEAN_SPACES_KEY,
+        secretAccessKey: process.env.DIGITALOCEAN_SPACES_SECRET
+    });
+
+// Add a file to a Space
+    var params = {
+        Bucket: "circlesland-pictures",
+        Body: "Hello",
+        Key: `abc/dasds.txt`,
+        ACL:'public-read'
+    };
+    const request = await s3.putObject(params).promise();
+    console.log(request);
+}
+
+uploadtoS3();
+

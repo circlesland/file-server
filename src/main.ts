@@ -27,7 +27,12 @@ const corsOptions = {
 }
 
 app.use(cors(corsOptions));
-app.use(bodyParser.json({limit: '5mb', type: 'application/json'}));
+app.use( bodyParser.json({limit: '5mb'}) );
+app.use(bodyParser.urlencoded({
+    limit: '5mb',
+    extended: true,
+    parameterLimit:5000
+}));
 
 app.get('/', (req: Request, res: Response) => {
     res.statusCode = 200;

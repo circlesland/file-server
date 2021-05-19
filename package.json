@@ -1,6 +1,6 @@
 {
   "name": "@o-platform/file-server",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "",
   "main": "dist/main.js",
   "prepublish": "tsc",
@@ -19,7 +19,7 @@
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "cross-fetch": "^3.1.4",
-    "express": "^4.17.1",
+    "express": "^4.17.0",
     "jsonwebtoken": "^8.5.1",
     "method-override": "^3.0.0"
   },

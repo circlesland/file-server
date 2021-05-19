@@ -2,17 +2,34 @@ import {NextFunction, Request, Response} from "express";
 import {Client} from "./auth-client/client";
 import {newLogger} from "./logger";
 
-const cors = require('cors')
+
 const express = require('express');
+const app = express();
+
+const cors = require('cors');
+const corsOptions = {
+    origin: function (origin: string, callback: any) {
+        callback(null, !origin || corsOrigins.indexOf(origin) > -1);
+    }
+};
+app.use(cors(corsOptions));
+app.use(express.json({
+    limit: "6mb",
+    inflate: true,
+    strict: true,
+    type: "application/json"
+}))
+
+
 const bodyParser = require('body-parser');
+
 // import fleekStorage from '@fleekhq/fleek-storage-js'
 const AWS = require('aws-sdk')
-const methodOverride = require('method-override')
-
+//const methodOverride = require('method-override')
 const packageJson = require("../package.json");
+
 const logger = newLogger("file-server", undefined);
 
-const app = express();
 
 if (!process.env.CORS_ORIGNS) {
     throw new Error("No CORS_ORIGNS env variable");
@@ -20,14 +37,7 @@ if (!process.env.CORS_ORIGNS) {
 const corsOrigins = process.env.CORS_ORIGNS.split(";").map(o => o.trim());
 logger.log("Cors origins: ", corsOrigins);
 
-
-const corsOptions = {
-    origin: function (origin: string, callback: any) {
-        callback(null, !origin || corsOrigins.indexOf(origin) > -1);
-    }
-}
-
-app.use(cors(corsOptions));
+/*
 app.use( bodyParser.json({limit: '5mb'}) );
 app.use(bodyParser.urlencoded({
     limit: '5mb',
@@ -35,10 +45,11 @@ app.use(bodyParser.urlencoded({
     parameterLimit:5000
 }));
 app.use(methodOverride())
-app.use(function (err:any) {
+app.use(function (a:any, b:any, c:any) {
     // logic
     logger.log("An error occured:", err);
 });
+ */
 
 app.get('/', (req: Request, res: Response) => {
     res.statusCode = 200;

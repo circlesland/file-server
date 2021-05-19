@@ -61,7 +61,7 @@ app.post('/upload', async (req: Request, res: Response) => {
 
         sub = tokenPayload.sub;
     } catch (e) {
-        console.error(e);
+        console.log(JSON.stringify(e));
         return res.json({
             status: "error",
             message: e.message
@@ -71,13 +71,14 @@ app.post('/upload', async (req: Request, res: Response) => {
     const fileName = req.body.fileName;
     const mimeType = req.body.mimeType;
     const bytes = Buffer.from(req.body.bytes, 'base64');
-
+/*
     if (!process.env.FLEEK_STORAGE_API_KEY) {
         throw new Error('process.env.FLEEK_STORAGE_API_KEY is not set')
     }
     if (!process.env.FLEEK_STORAGE_API_SECRET) {
         throw new Error('process.env.FLEEK_STORAGE_API_SECRET is not set')
     }
+ */
 
     try {
         /*
@@ -115,7 +116,7 @@ app.post('/upload', async (req: Request, res: Response) => {
             key: params.Key
         });
     } catch (e) {
-        console.error(e);
+        console.log(JSON.stringify(e));
         return res.json({
             status: "error",
             message: "An error occurred during the file upload."
@@ -130,9 +131,8 @@ if (!process.env.PORT) {
 app.listen(process.env.PORT, () => {
     console.log(`Server is running at http://localhost:${process.env.PORT}`);
 });
-
+/*
 async function uploadtoS3 () {
-
     const spacesEndpoint = new AWS.Endpoint(process.env.DIGITALOCEAN_SPACES_ENDPOINT);
     const s3 = new AWS.S3({
         endpoint: spacesEndpoint,
@@ -152,4 +152,4 @@ async function uploadtoS3 () {
 }
 
 uploadtoS3();
-
+*/

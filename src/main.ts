@@ -1,4 +1,4 @@
-import {Request, Response} from "express";
+import {NextFunction, Request, Response} from "express";
 import {Client} from "./auth-client/client";
 import {newLogger} from "./logger";
 
@@ -7,6 +7,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 // import fleekStorage from '@fleekhq/fleek-storage-js'
 const AWS = require('aws-sdk')
+const methodOverride = require('method-override')
 
 const packageJson = require("../package.json");
 const logger = newLogger("file-server", undefined);
@@ -33,6 +34,11 @@ app.use(bodyParser.urlencoded({
     extended: true,
     parameterLimit:5000
 }));
+app.use(methodOverride())
+app.use(function (err:any) {
+    // logic
+    logger.log("An error occured:", err);
+});
 
 app.get('/', (req: Request, res: Response) => {
     res.statusCode = 200;
@@ -47,7 +53,7 @@ app.get('/', (req: Request, res: Response) => {
     });
 });
 
-app.post('/upload', async (req: Request, res: Response) => {
+app.post('/upload', async (req: Request, res: Response, next:NextFunction) => {
     const uploadLogger = logger.newLogger("upload");
     try {
         let sub: string = "";

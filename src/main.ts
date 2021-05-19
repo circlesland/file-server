@@ -1,5 +1,6 @@
 import {Request, Response} from "express";
 import {Client} from "./auth-client/client";
+import {newLogger} from "./logger";
 
 const cors = require('cors')
 const express = require('express');
@@ -8,6 +9,7 @@ const bodyParser = require('body-parser');
 const AWS = require('aws-sdk')
 
 const packageJson = require("../package.json");
+const logger = newLogger("file-server", undefined);
 
 const app = express();
 
@@ -15,7 +17,8 @@ if (!process.env.CORS_ORIGNS) {
     throw new Error("No CORS_ORIGNS env variable");
 }
 const corsOrigins = process.env.CORS_ORIGNS.split(";").map(o => o.trim());
-console.log("Cors origins: ", corsOrigins);
+logger.log("Cors origins: ", corsOrigins);
+
 
 const corsOptions = {
     origin: function (origin: string, callback: any) {
@@ -40,8 +43,9 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 app.post('/upload', async (req: Request, res: Response) => {
-    let sub: string = "";
+    const uploadLogger = logger.newLogger("upload");
     try {
+        let sub: string = "";
         if (!req.headers.authorization) {
             throw new Error(`Not authorized.`);
         }
@@ -53,6 +57,8 @@ app.post('/upload', async (req: Request, res: Response) => {
             throw new Error('process.env.ACCEPTED_ISSUER is not set')
         }
 
+        uploadLogger.log(`Trying to verify the client's authorization ..`);
+
         const authClient = new Client(process.env.APP_ID, process.env.ACCEPTED_ISSUER);
         const tokenPayload = await authClient.verify(req.headers.authorization);
         if (!tokenPayload) {
@@ -60,35 +66,11 @@ app.post('/upload', async (req: Request, res: Response) => {
         }
 
         sub = tokenPayload.sub;
-    } catch (e) {
-        console.log(JSON.stringify(e));
-        return res.json({
-            status: "error",
-            message: e.message
-        });
-    }
+        uploadLogger.log(`Trying to verify the client's authorization .. Success. Sub: ${sub}`);
 
-    const fileName = req.body.fileName;
-    const mimeType = req.body.mimeType;
-    const bytes = Buffer.from(req.body.bytes, 'base64');
-/*
-    if (!process.env.FLEEK_STORAGE_API_KEY) {
-        throw new Error('process.env.FLEEK_STORAGE_API_KEY is not set')
-    }
-    if (!process.env.FLEEK_STORAGE_API_SECRET) {
-        throw new Error('process.env.FLEEK_STORAGE_API_SECRET is not set')
-    }
- */
-
-    try {
-        /*
-        const uploadedFile = await fleekStorage.upload({
-            apiKey: process.env.FLEEK_STORAGE_API_KEY,
-            apiSecret: process.env.FLEEK_STORAGE_API_SECRET,
-            key: `${sub}/${fileName ?? "no-name"}`,
-            data: bytes
-        });
-         */
+        const fileName = req.body.fileName;
+        const mimeType = req.body.mimeType;
+        const bytes = Buffer.from(req.body.bytes, 'base64');
 
         const spacesEndpoint = new AWS.Endpoint(process.env.DIGITALOCEAN_SPACES_ENDPOINT);
         const s3 = new AWS.S3({
@@ -97,14 +79,26 @@ app.post('/upload', async (req: Request, res: Response) => {
             secretAccessKey: process.env.DIGITALOCEAN_SPACES_SECRET
         });
 
-        var params = {
+        var params:{
+            Bucket: string,
+            Body?: any,
+            Key: string,
+            ACL: string
+        } = {
             Bucket: "circlesland-pictures",
-            Body: bytes,
             Key: `${sub}/${fileName ?? "no-name"}`,
-            ACL:'public-read'
+            ACL: 'public-read'
         };
 
+        uploadLogger.log(`Uploading ..`, params);
+
+        params.Body = bytes;
         await s3.putObject(params).promise();
+
+        uploadLogger.log(`Uploading .. Success.`, {
+            ...params,
+            url: `https://circlesland-pictures.fra1.cdn.digitaloceanspaces.com/${params.Key}`
+        });
 
         res.statusCode = 200;
         return res.json({
@@ -116,11 +110,13 @@ app.post('/upload', async (req: Request, res: Response) => {
             key: params.Key
         });
     } catch (e) {
-        console.log(JSON.stringify(e));
+        uploadLogger.log(e.message);
+        uploadLogger.log(e.stackTrace);
+
         return res.json({
             status: "error",
-            message: "An error occurred during the file upload."
-        })
+            message: e.message
+        });
     }
 });
 
@@ -131,25 +127,3 @@ if (!process.env.PORT) {
 app.listen(process.env.PORT, () => {
     console.log(`Server is running at http://localhost:${process.env.PORT}`);
 });
-/*
-async function uploadtoS3 () {
-    const spacesEndpoint = new AWS.Endpoint(process.env.DIGITALOCEAN_SPACES_ENDPOINT);
-    const s3 = new AWS.S3({
-        endpoint: spacesEndpoint,
-        accessKeyId: process.env.DIGITALOCEAN_SPACES_KEY,
-        secretAccessKey: process.env.DIGITALOCEAN_SPACES_SECRET
-    });
-
-// Add a file to a Space
-    var params = {
-        Bucket: "circlesland-pictures",
-        Body: "Hello",
-        Key: `abc/dasds.txt`,
-        ACL:'public-read'
-    };
-    const request = await s3.putObject(params).promise();
-    console.log(request);
-}
-
-uploadtoS3();
-*/

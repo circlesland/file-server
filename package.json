@@ -1,6 +1,6 @@
 {
   "name": "@o-platform/file-server",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "",
   "main": "dist/main.js",
   "prepublish": "tsc",

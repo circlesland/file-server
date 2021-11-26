@@ -101,14 +101,15 @@ app.post('/upload', async (req: Request, res: Response, next:NextFunction) => {
             secretAccessKey: process.env.DIGITALOCEAN_SPACES_SECRET
         });
 
-        var params:{
+        const dir = sub.replace("/", "--");
+        const params:{
             Bucket: string,
             Body?: any,
             Key: string,
             ACL: string
         } = {
             Bucket: "circlesland-pictures",
-            Key: `${sub}/${fileName ?? "no-name"}`,
+            Key: `${dir}/${fileName ?? "no-name"}`,
             ACL: 'public-read'
         };
 
